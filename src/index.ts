@@ -1,8 +1,26 @@
 import "dotenv/config";
 import express, { Request, Response } from "express";
+import cors from "cors";
 import { Mistral } from "@mistralai/mistralai";
 
+const ENVIRONMENT = process.env.ENVIRONMENT || "development";
+const isDevelopment = ENVIRONMENT === "development";
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "").split(",").map((o) => o.trim()).filter(Boolean);
+
 const app = express();
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (isDevelopment) return callback(null, true);
+      if (!origin || ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+      callback(new Error(`Origen no permitido por CORS: ${origin}`));
+    },
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
 app.use(express.json({ limit: "50mb" }));
 
 const mistral = new Mistral({
